@@ -1,5 +1,7 @@
 # Quality engineering
 
+[![api-tests](https://github.com/CoreSci/quality-engineering/actions/workflows/api-tests.yml/badge.svg?branch=main)](https://github.com/CoreSci/quality-engineering/actions/workflows/api-tests.yml)
+
 Testing as an engineering discipline: deciding what to test from the risks, testing it at the right level, and showing what was tested. Every example runs locally and in CI, against small systems written for this repository.
 
 ## Scope
