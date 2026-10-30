@@ -1,0 +1,141 @@
+# API tests for the Bookshelf service (api-testing/).
+# - pytest job: the service runs as a plain process on 127.0.0.1; the suite runs on
+#   every supported Python version.
+# - docker-smoke job: builds the image, starts it with the port published on
+#   127.0.0.1 only, waits for its health check and runs the suite against it.
+# Actions are pinned to full commit SHAs (tag in the comment); the token is read-only;
+# no secrets: the service's API key is generated per run and masked in the log.
+name: api-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: api-testing
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  BOOKSHELF_BASE_URL: http://127.0.0.1:8000
+
+jobs:
+  pytest:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --only-binary=:all: -r requirements-test.txt
+
+      - name: Generate a throwaway API key for this run
+        run: |
+          key="$(python -c 'import secrets; print(secrets.token_hex(16))')"
+          echo "::add-mask::$key"
+          echo "BOOKSHELF_API_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Start the service on 127.0.0.1
+        working-directory: api-testing/service
+        run: |
+          nohup python -m uvicorn app:app --host 127.0.0.1 --port 8000 --log-level warning \
+            > "$RUNNER_TEMP/uvicorn.log" 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/uvicorn.log"
+          exit 1
+
+      - name: Run the tests
+        run: |
+          python -m pytest -q -p no:cacheprovider --junitxml="$RUNNER_TEMP/junit/api-tests-${{ matrix.python-version }}.xml"
+
+      - name: Upload JUnit report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: junit-api-tests-python-${{ matrix.python-version }}
+          path: ${{ runner.temp }}/junit/
+          if-no-files-found: warn
+          retention-days: 7
+
+  docker-smoke:
+    name: Docker smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --only-binary=:all: -r requirements-test.txt
+
+      - name: Generate a throwaway API key for this run
+        run: |
+          key="$(python -c 'import secrets; print(secrets.token_hex(16))')"
+          echo "::add-mask::$key"
+          echo "BOOKSHELF_API_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Build the image
+        run: docker build -t bookshelf-api:ci service
+
+      - name: Start the container (port published on 127.0.0.1 only)
+        run: |
+          docker run -d --name bookshelf -p 127.0.0.1:8000:8000 -e BOOKSHELF_API_KEY \
+            --read-only --tmpfs /tmp --security-opt no-new-privileges:true bookshelf-api:ci
+          for _ in $(seq 1 30); do
+            if [ "$(docker inspect -f '{{.State.Health.Status}}' bookshelf)" = healthy ]; then break; fi
+            sleep 1
+          done
+          test "$(docker inspect -f '{{.State.Health.Status}}' bookshelf)" = healthy
+          docker port bookshelf
+
+      - name: Run the tests against the container
+        run: |
+          python -m pytest -q -p no:cacheprovider --junitxml="$RUNNER_TEMP/junit/api-tests-docker.xml"
+
+      - name: Stop the container
+        if: ${{ always() }}
+        run: docker rm -f bookshelf || true
+
+      - name: Upload JUnit report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: junit-api-tests-docker
+          path: ${{ runner.temp }}/junit/
+          if-no-files-found: warn
+          retention-days: 7

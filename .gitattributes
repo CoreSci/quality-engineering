@@ -1,0 +1,2 @@
+# Keep line endings LF everywhere (scripts, JSON snapshot, Dockerfile)
+* text=auto eol=lf

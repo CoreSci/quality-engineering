@@ -1,0 +1,16 @@
+# Local run: copy .env.example to .env, choose a key, then `docker compose up --build`.
+# The port is published on the host's 127.0.0.1 only, so the service is not reachable
+# from other machines.
+services:
+  bookshelf:
+    build: ./service
+    image: bookshelf-api:local
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      BOOKSHELF_API_KEY: ${BOOKSHELF_API_KEY:?set BOOKSHELF_API_KEY in .env (see .env.example)}
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true

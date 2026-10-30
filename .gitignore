@@ -1,0 +1,6 @@
+# Local settings and test output
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+junit*.xml
