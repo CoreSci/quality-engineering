@@ -1,0 +1,15 @@
+# UI test dependencies, pinned. Verified in mcr.microsoft.com/playwright/python:v1.64.1-noble
+# (Python 3.12.3, browsers preinstalled for Playwright 1.64.1). The package and the image
+# version must match: Playwright 1.64.1 drives the browser builds of the v1.64.1 image.
+greenlet==3.5.6
+iniconfig==2.3.1
+packaging==26.3
+playwright==1.64.1
+pluggy==1.7.0
+pyee==14.0.0
+Pygments==2.21.0
+pytest==9.1.1
+pytest-playwright==0.10.0
+python-slugify==9.1.3
+text-unidecode==1.3
+typing_extensions==4.16.0

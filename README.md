@@ -6,7 +6,7 @@ Testing as an engineering discipline: deciding what to test from the risks, test
 
 ## Scope
 
-- **In:** API testing (functional, negative, boundary, and contract tests derived from an OpenAPI document), risk-based test plans, requirements traceability, continuous integration.
+- **In:** API testing (functional, negative, boundary, and contract tests derived from an OpenAPI document), browser UI test automation, risk-based test plans, requirements traceability, continuous integration.
 - **Out:** performance and load testing, security testing, and testing any third-party site or service. Everything here runs against systems written for this repository, on the local machine.
 
 ## Structure
@@ -14,6 +14,7 @@ Testing as an engineering discipline: deciding what to test from the risks, test
 | Folder | What it is |
 |---|---|
 | [`api-testing/`](api-testing/) | A small FastAPI service (local only) and its pytest suite: functional, negative, boundary and OpenAPI contract tests, a test plan, Docker and CI |
+| [`ui-testing/`](ui-testing/) | A small static web page (served on 127.0.0.1 only) and its Playwright UI tests: locators by role and label, input checks, keyboard use, persistence, a test plan and CI in the official Playwright container |
 
 ## Run
 
@@ -26,6 +27,17 @@ python -m pytest -q          # starts the service on 127.0.0.1 for the test sess
 ```
 
 or run the service with `docker compose up --build` (port published on 127.0.0.1 only) and point the tests at it. CI: the [`api-tests`](.github/workflows/api-tests.yml) workflow, on Python 3.11 to 3.14 and against the Docker image.
+
+For `ui-testing/` (the test session serves the page on 127.0.0.1 itself):
+
+```bash
+cd ui-testing
+python -m pip install -r requirements.txt
+python -m playwright install chromium   # not needed inside the Playwright container image
+python -m pytest -q
+```
+
+CI: the [`ui-tests`](.github/workflows/ui-tests.yml) workflow, inside the official Playwright container image pinned by digest.
 
 ## Applied example: tests that live with their code
 
@@ -45,7 +57,8 @@ Tests belong next to the code they test, so the tests of other projects are not 
 - **Pinned:** dependencies, Docker base images and CI actions.
 - **Known gaps written down** in each test plan.
 
-## Status (2026-10-26)
+## Status (2026-10-30)
 
 - `api-testing/`: 106 tests, passing on Python 3.11, 3.12, 3.13 and 3.14 and against the Docker image (local Docker runs before CI was added; CI runs on every push to `main` and on pull requests).
+- `ui-testing/`: 26 tests, passing in the Playwright container image (Python 3.12.3, Chromium) before CI was added; CI runs on every push to `main` and on pull requests.
 - The systems under test are small and in memory, written to be tested, not production services. No performance or security testing. CI is Linux only.

@@ -1,0 +1,10 @@
+body { font-family: sans-serif; margin: 0; background: #ffffff; color: #1a1a1a; }
+main { max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+.field { margin-bottom: 0.75rem; }
+label { display: block; font-weight: bold; margin-bottom: 0.25rem; }
+input, select, button { font: inherit; padding: 0.3rem 0.5rem; }
+input[aria-invalid="true"] { border: 2px solid #b00020; }
+.error { color: #b00020; min-height: 1.2em; margin: 0.25rem 0 0; }
+#books { padding-left: 1.2rem; }
+#books li { margin: 0.4rem 0; }
+#books button { margin-left: 0.5rem; }

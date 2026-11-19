@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reading list</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Reading list</h1>
+
+    <form id="add-form" aria-labelledby="form-heading" novalidate>
+      <h2 id="form-heading">Add a book</h2>
+
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" name="title" type="text" autocomplete="off" aria-describedby="title-error">
+        <p id="title-error" class="error" aria-live="polite"></p>
+      </div>
+
+      <div class="field">
+        <label for="pages">Pages</label>
+        <input id="pages" name="pages" type="text" inputmode="numeric" autocomplete="off" aria-describedby="pages-error">
+        <p id="pages-error" class="error" aria-live="polite"></p>
+      </div>
+
+      <div class="field">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="to-read">To read</option>
+          <option value="reading">Reading</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+
+      <button type="submit">Add book</button>
+    </form>
+
+    <section aria-labelledby="list-heading">
+      <h2 id="list-heading">Books</h2>
+
+      <div class="field">
+        <label for="filter">Show</label>
+        <select id="filter">
+          <option value="all">All</option>
+          <option value="to-read">To read</option>
+          <option value="reading">Reading</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+
+      <p id="summary" role="status">0 of 0 books shown, 0 pages</p>
+      <ul id="books" aria-label="Books"></ul>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
